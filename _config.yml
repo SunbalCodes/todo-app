@@ -1,0 +1,26 @@
+# Site settings
+title: Todo App
+description: A simple Todo application
+baseurl: "" # Leave this empty unless serving the site from a subdirectory
+url: "https://SunbalCodes.github.io/todo-app" # Replace with your GitHub Pages URL
+
+# Theme and plugins
+theme: jekyll-theme-primer
+plugins:
+  - jekyll-seo-tag
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-feed
+
+# Exclusions
+exclude:
+  - node_modules
+  - vendor
+
+# Pagination settings
+paginate: 5 # Number of posts per page
+
+# Markdown settings
+markdown: kramdown
+kramdown:
+  input: GFM
