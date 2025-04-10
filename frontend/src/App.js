@@ -24,7 +24,7 @@ function App() {
     fetchTodos();
   }, []);
 
-  // Add todo (keep only this version)
+  // Add todo
   const addTodo = async () => {
     if (!text.trim() || loading) return;
     
@@ -32,26 +32,23 @@ function App() {
       setLoading(true);
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const response = await axios.post('http://localhost:5000/api/todos', { 
-        text 
-      }, {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json'
+
+      const response = await axios.post('http://localhost:5000/api/todos', 
+        { text },
+        { 
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/json' }
         }
-      });
+      );
 
       clearTimeout(timeoutId);
-      setTodos(prev => [...prev, response.data]);
+      setTodos([...todos, response.data]);
       setText('');
     } catch (error) {
-      console.error('Full error:', error);
-      if (error.response) {
-        // Show actual server message
-        alert(`Error: ${error.response.data.message || error.response.statusText}`);
-      } else {
-        alert('Network error - is the backend running?');
-      }
+      console.error('Error:', error);
+      setError(error.response?.data?.message || 'Failed to add todo');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,7 +91,6 @@ function App() {
     <div style={{ maxWidth: '600px', margin: '0 auto' }}>
       <h1 style={{ textAlign: 'center' }}>My Todo List</h1>
       
-      {/* Error display */}
       {error && (
         <div style={{ 
           color: 'red', 
@@ -103,7 +99,7 @@ function App() {
           border: '1px solid red',
           borderRadius: '4px'
         }}>
-          Error: {error}
+          {error}
           <button 
             onClick={() => setError(null)}
             style={{ marginLeft: '10px' }}
@@ -126,7 +122,28 @@ function App() {
         >
           All
         </button>
-        {/* Other filter buttons... */}
+        <button 
+          onClick={() => setFilter('active')}
+          disabled={loading}
+          style={{ 
+            backgroundColor: filter === 'active' ? '#4CAF50' : '#f1f1f1',
+            color: filter === 'active' ? 'white' : 'black',
+            opacity: loading ? 0.7 : 1
+          }}
+        >
+          Active
+        </button>
+        <button 
+          onClick={() => setFilter('completed')}
+          disabled={loading}
+          style={{ 
+            backgroundColor: filter === 'completed' ? '#4CAF50' : '#f1f1f1',
+            color: filter === 'completed' ? 'white' : 'black',
+            opacity: loading ? 0.7 : 1
+          }}
+        >
+          Completed
+        </button>
       </div>
 
       {/* Add Todo Input */}
@@ -160,14 +177,35 @@ function App() {
       {/* Todo List */}
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {filteredTodos.map(todo => (
-          <li key={todo._id} style={{ /* ... */ }}>
-            {/* ... existing todo item ... */}
+          <li 
+            key={todo._id} 
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: '10px',
+              margin: '5px 0',
+              backgroundColor: '#f9f9f9',
+              borderRadius: '4px'
+            }}
+          >
+            <span 
+              style={{ 
+                textDecoration: todo.completed ? 'line-through' : 'none',
+                color: todo.completed ? '#888' : 'inherit'
+              }}
+            >
+              {todo.text} {/* THIS IS THE CRITICAL ADDITION */}
+            </span>
             <div style={{ display: 'flex', gap: '5px' }}>
               <button 
                 onClick={() => !loading && toggleComplete(todo._id)}
                 disabled={loading}
                 style={{ 
-                  /* ... existing styles ... */
+                  backgroundColor: todo.completed ? '#ff9800' : '#4CAF50',
+                  color: 'white',
+                  border: 'none',
+                  padding: '5px 10px',
                   opacity: loading ? 0.7 : 1
                 }}
               >
@@ -177,7 +215,10 @@ function App() {
                 onClick={() => !loading && deleteTodo(todo._id)}
                 disabled={loading}
                 style={{ 
-                  /* ... existing styles ... */
+                  backgroundColor: '#f44336',
+                  color: 'white',
+                  border: 'none',
+                  padding: '5px 10px',
                   opacity: loading ? 0.7 : 1
                 }}
               >

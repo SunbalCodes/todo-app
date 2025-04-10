@@ -15,7 +15,7 @@ router.post('/', async (req, res) => {
     if (!req.body.text) {
       return res.status(400).json({ message: "Text is required" });
     }
-
+    console.log('Incoming data:', req.body); // Verify received text
     const newTodo = new Todo({
       text: req.body.text,
       completed: false // Explicitly set default
