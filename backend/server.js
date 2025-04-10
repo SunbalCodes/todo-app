@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 
-//MongoDB Connect
+//MongoDB Connect and Err HandleR
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected!"))
   .catch(err => console.error(err));
@@ -15,6 +15,19 @@ mongoose.connect(process.env.MONGO_URI)
   })
   .then(() => console.log("MongoDB connected successfully!"))
   .catch(err => console.error("MongoDB connection error:", err));
+
+
+// Enable compression
+const compression = require('compression');
+app.use(compression());
+
+// Add timeout middleware
+app.use((req, res, next) => {
+  res.setTimeout(5000, () => { // 5 second timeout
+    res.status(503).json({ error: 'Service timeout' });
+  });
+  next();
+});
 
 
 // Middleware

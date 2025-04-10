@@ -26,18 +26,23 @@ function App() {
 
   // Add todo (keep only this version)
   const addTodo = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || loading) return;
     
     try {
       setLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       const response = await axios.post('http://localhost:5000/api/todos', { 
         text 
       }, {
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json'
         }
       });
-      setTodos([...todos, response.data]);
+
+      clearTimeout(timeoutId);
+      setTodos(prev => [...prev, response.data]);
       setText('');
     } catch (error) {
       console.error('Full error:', error);
