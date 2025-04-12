@@ -1,55 +1,89 @@
 require('dotenv').config();
 const express = require('express');
-const app = express();
 const mongoose = require('mongoose');
-
-//MongoDB Connect and Err HandleR
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected!"))
-  .catch(err => console.error(err));
-
-  mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000
-  })
-  .then(() => console.log("MongoDB connected successfully!"))
-  .catch(err => console.error("MongoDB connection error:", err));
-
-
-// Enable compression
-const compression = require('compression');
-app.use(compression());
-
-// Add timeout middleware
-app.use((req, res, next) => {
-  res.setTimeout(5000, () => { // 5 second timeout
-    res.status(503).json({ error: 'Service timeout' });
-  });
-  next();
-});
-
-
-// Middleware
-app.use(express.json()); 
-
-// Test Route
-app.get('/', (req, res) => {
-  res.send('Todo API Working!');
-});
-
-//
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const cookieParser = require('cookie-parser');
+const { errorHandler } = require('./middleware/errorMiddleware');
+const authRouter = require('./routes/auth');
+const todosRouter = require('./routes/todos');
 
-// Enable CORS before routes
+const app = express();
+
+// Database Connection
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000
+    });
+    console.log('MongoDB connected successfully!');
+  } catch (err) {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
+  }
+};
+connectDB();
+
+// Security Middleware
+app.use(helmet());
+app.use(mongoSanitize());
 app.use(cors({
-  origin: 'http://localhost:3000', // React app's URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 }));
 
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api', limiter);
 
-// Start Server
-const todosRouter = require('./routes/todos');
+// Body Parsing
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Routes
+app.use('/api/auth', authRouter);
 app.use('/api/todos', todosRouter);
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
+});
+
+// Error Handling
+app.use(errorHandler);
+
+// 404 Handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found'
+  });
+});
+
+// Server Configuration
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err.message);
+  server.close(() => process.exit(1));
+});
+
+module.exports = server;
