@@ -2,10 +2,10 @@ import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Single declaration of AuthContext
+// Create context (single declaration)
 const AuthContext = createContext();
 
-// Custom hook for accessing auth context
+// Custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check auth status on initial load
+  // Check auth status on mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
@@ -37,11 +37,11 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
-  // Login function
+  // Login handler
   const login = async (username, password) => {
     try {
       const { data } = await axios.post(
-        '/api/auth/login',
+        '/api/auth/login', 
         { username, password },
         { withCredentials: true }
       );
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register function
+  // Register handler
   const register = async (username, password) => {
     try {
       await axios.post(
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout function
+  // Logout handler
   const logout = async () => {
     try {
       await axios.get('/api/auth/logout', { withCredentials: true });
@@ -83,20 +83,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Context value
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    logout
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Default export (optional)
 export default AuthContext;
