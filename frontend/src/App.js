@@ -1,12 +1,13 @@
+// src/App.js
 import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './App.css';
 
-
 // Lazy-loaded components
 const Login = lazy(() => import('./components/auth/Login'));
 const Register = lazy(() => import('./components/auth/Register'));
+// Updated TodoApp import path according to your folder structure:
 const TodoApp = lazy(() => import('./components/TodoApp'));
 
 // Protected Route Component

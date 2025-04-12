@@ -1,3 +1,4 @@
+// src/context/AuthContext.js
 import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -27,7 +28,8 @@ export const AuthProvider = ({ children }) => {
         const { data } = await axios.get('/api/auth/check', {
           withCredentials: true
         });
-        setUser(data.user);
+        // Adjusting response property: backend returns { success, data: { id, username } }
+        setUser(data.data);
       } catch (error) {
         setUser(null);
       } finally {
@@ -45,7 +47,8 @@ export const AuthProvider = ({ children }) => {
         { username, password },
         { withCredentials: true }
       );
-      setUser(data.user);
+      // Set the user based on the backend response
+      setUser(data.data);
       return { success: true };
     } catch (error) {
       return {

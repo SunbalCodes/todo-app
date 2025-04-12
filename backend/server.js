@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -11,6 +12,37 @@ const authRouter = require('./routes/auth');
 const todosRouter = require('./routes/todos');
 
 const app = express();
+
+//------------------------------------------------------------------------------
+// URL Validation Middleware
+// This middleware checks that the incoming request URL is valid (i.e. it must
+// be a relative URL starting with a slash). This prevents accidental or malicious
+// requests with a full URL (e.g. "https://git.new/pathToRegexpError") from reaching
+// the Express router and causing path-to-regexp to fail.
+//------------------------------------------------------------------------------
+app.use((req, res, next) => {
+  // Log the incoming URL for debugging
+  console.log("Incoming request URL:", req.originalUrl);
+
+  // If the URL does not start with '/', reject it.
+  if (!req.originalUrl.startsWith('/')) {
+    console.error("Rejected URL not starting with /:", req.originalUrl);
+    return res.status(400).json({ success: false, error: 'Invalid URL format: must start with "/"' });
+  }
+  
+  // Additionally, if the URL contains a protocol indicator (e.g., "http://" or "https://")
+  // anywhere in the URL string, reject it.
+  if (req.originalUrl.includes('://')) {
+    console.error("Rejected absolute URL:", req.originalUrl);
+    return res.status(400).json({ success: false, error: 'Invalid URL format: absolute URL not allowed' });
+  }
+  
+  next();
+});
+
+//------------------------------------------------------------------------------
+// The rest of your middleware and routes follow below...
+//------------------------------------------------------------------------------
 
 // Database Connection
 const connectDB = async () => {
